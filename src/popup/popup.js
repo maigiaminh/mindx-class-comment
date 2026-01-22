@@ -101,7 +101,6 @@ export default function Popup() {
 
   const parseClassCode = (className) => {
     if (!className) return null;
-    const upperName = className.toUpperCase();
 
     const mapping = {
       // Scratch
@@ -122,12 +121,11 @@ export default function Popup() {
       JSI: { subject: "Web", course: "Internship" },
     };
 
-    // Sort keys by length descending to match longest first (e.g. JSB before SB though JSB is unique)
-    // Actually no overlap issue in current set but good practice.
     const keys = Object.keys(mapping).sort((a, b) => b.length - a.length);
 
     for (const code of keys) {
-      if (upperName.includes(code)) {
+      const regex = new RegExp(`\\b${code}(?![a-zA-Z])`, "i");
+      if (regex.test(className)) {
         return mapping[code];
       }
     }
@@ -142,13 +140,30 @@ export default function Popup() {
         {
           target: { tabId: tabs[0].id },
           func: () => {
-            const classElement = document.querySelector("header h6");
+            const h6Elements = document.querySelectorAll("header h6");
+            let classText = "";
+            
+            for (const h6 of h6Elements) {
+                if (h6.innerText.includes("-")) {
+                    classText = h6.innerText;
+                    break;
+                }
+            }
+            
+            if (!classText && h6Elements.length > 1) {
+                
+            }
+            
+            if (!classText && h6Elements.length > 0) {
+                 classText = h6Elements[0].innerText;
+            }
+
             const activeSessionElement = document.querySelector(
               'div[id^="class-comments-slot-carousel-"].active .info-container > div:first-child'
             );
             
             return {
-              className: classElement ? classElement.innerText : "",
+              className: classText,
               sessionText: activeSessionElement ? activeSessionElement.innerText : ""
             };
           },
@@ -158,23 +173,42 @@ export default function Popup() {
             const { className, sessionText } = results[0].result;
             const parsedInfo = parseClassCode(className);
             
+            let detectedSubject = "";
+            let detectedCourse = "";
+            let detectedSession = "";
+
             if (parsedInfo) {
-              setSubject(parsedInfo.subject);
-              setCourse(parsedInfo.course);
+              detectedSubject = parsedInfo.subject;
+              detectedCourse = parsedInfo.course;
+              setSubject(detectedSubject);
+              setCourse(detectedCourse);
             } else if (className) {
-               // Fallback if not found in map
-               setSubject(className.split("-")[1] || "MindX");
+               detectedSubject = className.split("-")[1]?.trim() || "MindX";
+               setSubject(detectedSubject);
             }
 
             if (sessionText) {
               const sessionNum = sessionText.replace("#", "").trim();
-              setSession(`Buổi ${sessionNum}`);
+              detectedSession = `Buổi ${sessionNum}`;
+              setSession(detectedSession);
             }
             
-            const detectedSub = parsedInfo ? parsedInfo.subject : "Unknown";
-            const detectedCourse = parsedInfo ? parsedInfo.course : "Unknown";
+            // Auto load content if match found
+            let extraMsg = "";
+            if (detectedSubject && detectedCourse && detectedSession) {
+                const lesson = lessonsData?.[detectedSubject]?.[detectedCourse]?.[detectedSession];
+                if (lesson) {
+                    const contentArray = Array.isArray(lesson) ? lesson : lesson.split("\n");
+                    setLessonContent(contentArray);
+                    extraMsg = "(Đã load nội dung)";
+                } else {
+                    setLessonContent([]);
+                    extraMsg = "(Không có nội dung)";
+                }
+            }
+            
+            setStatus(`Raw: [${className}] | [${sessionText}] \n=> ${detectedSubject} - ${detectedCourse} | ${detectedSession} ${extraMsg}`);
 
-            setStatus(`Lớp: ${className} -> ${detectedSub} - ${detectedCourse} | Buổi ${sessionText?.replace("#", "")}`);
           } else {
             setStatus("Không tìm thấy thông tin lớp học trên trang này.");
           }
