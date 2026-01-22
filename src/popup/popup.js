@@ -230,21 +230,26 @@ export default function Popup() {
     }
 
     setStatus("Đang tạo nhận xét...");
-    const prompt = `Bạn là giáo viên MindX. Viết nhận xét ngắn gọn, súc tích (khoảng 3-4 ý chính) cho học viên:
+    const prompt = `Bạn là giáo viên MindX. Hãy viết nhận xét sáng tạo, đa dạng cho học viên:
     - Lớp: ${subject} - ${course} (${session})
     - Nội dung bài: ${lessonContent}
     - Ý nhận xét: "${customInput}"
 
     Yêu cầu bắt buộc:
-    1. Ngắn gọn, đi thẳng vào vấn đề.
+    1. Ngắn gọn (hoặc dài dòng tùy theo Ý nhận xét:), súc tích (5-6 ý), đi thẳng vào vấn đề.
     2. MỖI Ý VIẾT TRÊN 1 DÒNG RIÊNG BIỆT (bắt buộc xuống dòng).
     3. Luôn dùng gạch đầu dòng (-) ở đầu mỗi ý.
-    4. Bao gồm: 
-       - Ghi nhận nỗ lực/Tinh thần học tập.
-       - Nhận xét mức độ hiểu bài/Kiến thức đã học.
-       - Lời khuyên/Động viên ngắn gọn nếu kiến thức chưa vững.
-    5. Viết dưới xưng hô "Thầy"
+    4. Cấu trúc bài nhận xét:
+       - Ghi nhận nỗ lực/Tinh thần học tập (Dùng từ ngữ phong phú, tránh lặp lại "Em rất ngoan" hay "Em có ý thức").
+       - Nhận xét mức độ hiểu bài/Kiến thức (Nhận xét cụ thể vào các concept đã học trong bài).
+       - Nhận xét về thái độ học tập (Thái độ học tập, sự chủ động, sáng tạo, v.v.)
+       - Nếu buổi đó có bài kiểm tra Checkpoint thì nhận xét thêm về bài kiểm tra.
+       - Nếu buổi đó là buổi nhận xét cuối khóa thì nhận xét thêm về quá trình học tập của học viên.
+       - Lời khuyên/Động viên (Mang tính xây dựng, mới mẻ).
+    5. Viết dưới xưng hô "Thầy".
+    6. QUAN TRỌNG: Hãy thay đổi cách diễn đạt, từ vựng và cấu trúc câu để mỗi nhận xét nghe thật tự nhiên và khác biệt, tránh rập khuôn.
     `;
+
     const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
 
     chrome.runtime.sendMessage(

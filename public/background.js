@@ -11,12 +11,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             "Authorization": `Bearer ${apiKey}`,
           },
           body: JSON.stringify({
-            model: "gpt-4.1-nano",
+            model: "gpt-4o-mini",
             messages: [
               { role: "system", content: "Bạn là một trợ lý AI giúp tạo nhận xét học tập." },
               { role: "user", content: request.prompt },
             ],
-            temperature: 0.7,
+            temperature: 0.9,
           }),
         });
 
