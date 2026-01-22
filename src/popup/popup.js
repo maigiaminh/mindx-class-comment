@@ -196,22 +196,20 @@ export default function Popup() {
     }
 
     setStatus("Đang tạo nhận xét...");
-    const prompt = `Bạn là một giáo viên MindX tâm huyết và chuyên nghiệp.
-    Hãy viết nhận xét chi tiết cho học viên với thông tin sau:
-    - Môn học: ${subject}
-    - Khóa học: ${course}
-    - Buổi học: ${session}
+    const prompt = `Bạn là giáo viên MindX. Viết nhận xét ngắn gọn, súc tích (khoảng 3-4 ý chính) cho học viên:
+    - Lớp: ${subject} - ${course} (${session})
     - Nội dung bài: ${lessonContent}
+    - Ý nhận xét: "${customInput}"
 
-    Dựa trên các ý nhận xét thô: "${customInput}"
-
-    Yêu cầu đầu ra:
-    1. Văn phong: Chuyên nghiệp, ân cần, mang tính xây dựng và khích lệ (Growth Mindset).
-    2. Cấu trúc rõ ràng, mạch lạc:
-       - Phần 1: Ghi nhận sự cố gắng và điểm mạnh của học viên trong buổi học.
-       - Phần 2: Đánh giá chi tiết dựa trên 'Nội dung bài' và 'nhận xét thô' đã cung cấp.
-       - Phần 3: Lời khuyên cụ thể hoặc lời động viên cho các buổi sau.
-    3. Trình bày: Chia đoạn tách bạch để dễ đọc. Sử dụng gạch đầu dòng (-) nếu cần liệt kê các điểm cụ thể.
+    Yêu cầu bắt buộc:
+    1. Ngắn gọn, đi thẳng vào vấn đề.
+    2. MỖI Ý VIẾT TRÊN 1 DÒNG RIÊNG BIỆT (bắt buộc xuống dòng).
+    3. Luôn dùng gạch đầu dòng (-) ở đầu mỗi ý.
+    4. Bao gồm: 
+       - Ghi nhận nỗ lực/Tinh thần học tập.
+       - Nhận xét mức độ hiểu bài/Kiến thức đã học.
+       - Lời khuyên/Động viên ngắn gọn nếu kiến thức chưa vững.
+    5. Viết dưới xưng hô "Thầy"
     `;
     const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
 
