@@ -99,6 +99,90 @@ export default function Popup() {
     });
   };
 
+  const parseClassCode = (className) => {
+    if (!className) return null;
+    const upperName = className.toUpperCase();
+
+    const mapping = {
+      // Scratch
+      SB: { subject: "Scratch", course: "Basic" },
+      SA: { subject: "Scratch", course: "Advance" },
+      SI: { subject: "Scratch", course: "Internship" },
+      // Game Maker
+      GB: { subject: "Game Maker", course: "Basic" },
+      GA: { subject: "Game Maker", course: "Advance" },
+      GI: { subject: "Game Maker", course: "Internship" },
+      // App (Python)
+      PTB: { subject: "App", course: "Basic" },
+      PTA: { subject: "App", course: "Advance" },
+      PTI: { subject: "App", course: "Internship" },
+      // Web
+      JSB: { subject: "Web", course: "Basic" },
+      JSA: { subject: "Web", course: "Advance" },
+      JSI: { subject: "Web", course: "Internship" },
+    };
+
+    // Sort keys by length descending to match longest first (e.g. JSB before SB though JSB is unique)
+    // Actually no overlap issue in current set but good practice.
+    const keys = Object.keys(mapping).sort((a, b) => b.length - a.length);
+
+    for (const code of keys) {
+      if (upperName.includes(code)) {
+        return mapping[code];
+      }
+    }
+
+    return null;
+  };
+
+  const handleAutoDetect = () => {
+    setStatus("Đang quét thông tin trang...");
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      chrome.scripting.executeScript(
+        {
+          target: { tabId: tabs[0].id },
+          func: () => {
+            const classElement = document.querySelector("header h6");
+            const activeSessionElement = document.querySelector(
+              'div[id^="class-comments-slot-carousel-"].active .info-container > div:first-child'
+            );
+            
+            return {
+              className: classElement ? classElement.innerText : "",
+              sessionText: activeSessionElement ? activeSessionElement.innerText : ""
+            };
+          },
+        },
+        (results) => {
+          if (results && results[0] && results[0].result) {
+            const { className, sessionText } = results[0].result;
+            const parsedInfo = parseClassCode(className);
+            
+            if (parsedInfo) {
+              setSubject(parsedInfo.subject);
+              setCourse(parsedInfo.course);
+            } else if (className) {
+               // Fallback if not found in map
+               setSubject(className.split("-")[1] || "MindX");
+            }
+
+            if (sessionText) {
+              const sessionNum = sessionText.replace("#", "").trim();
+              setSession(`Buổi ${sessionNum}`);
+            }
+            
+            const detectedSub = parsedInfo ? parsedInfo.subject : "Unknown";
+            const detectedCourse = parsedInfo ? parsedInfo.course : "Unknown";
+
+            setStatus(`Lớp: ${className} -> ${detectedSub} - ${detectedCourse} | Buổi ${sessionText?.replace("#", "")}`);
+          } else {
+            setStatus("Không tìm thấy thông tin lớp học trên trang này.");
+          }
+        }
+      );
+    });
+  };
+
   const handleGenerate = () => {
     if (!customInput.trim()) {
       setStatus("Vui lòng nhập nội dung yêu cầu trước.");
@@ -112,14 +196,23 @@ export default function Popup() {
     }
 
     setStatus("Đang tạo nhận xét...");
-    const prompt = `Viết một nhận xét ngắn gọn, chuyên nghiệp, mang tính khích lệ cho học viên.
-    Thông tin buổi học:
-    - Môn: ${subject}
-    - Khóa: ${course}
-    - Buổi: ${session}
-    - Nội dung buổi: ${lessonContent}
-    
-    Nhận xét dựa trên các ý: "${customInput}".`;
+    const prompt = `Bạn là một giáo viên MindX tâm huyết và chuyên nghiệp.
+    Hãy viết nhận xét chi tiết cho học viên với thông tin sau:
+    - Môn học: ${subject}
+    - Khóa học: ${course}
+    - Buổi học: ${session}
+    - Nội dung bài: ${lessonContent}
+
+    Dựa trên các ý nhận xét thô: "${customInput}"
+
+    Yêu cầu đầu ra:
+    1. Văn phong: Chuyên nghiệp, ân cần, mang tính xây dựng và khích lệ (Growth Mindset).
+    2. Cấu trúc rõ ràng, mạch lạc:
+       - Phần 1: Ghi nhận sự cố gắng và điểm mạnh của học viên trong buổi học.
+       - Phần 2: Đánh giá chi tiết dựa trên 'Nội dung bài' và 'nhận xét thô' đã cung cấp.
+       - Phần 3: Lời khuyên cụ thể hoặc lời động viên cho các buổi sau.
+    3. Trình bày: Chia đoạn tách bạch để dễ đọc. Sử dụng gạch đầu dòng (-) nếu cần liệt kê các điểm cụ thể.
+    `;
     const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
 
     chrome.runtime.sendMessage(
@@ -200,6 +293,13 @@ export default function Popup() {
         setSelected={setSelected}
         handleRun={handleRun}
       />
+      
+      <div style={{ textAlign: "center", margin: "10px 0" }}>
+          <button onClick={handleAutoDetect} className="popup-button" style={{backgroundColor: "#4CAF50"}}>
+            Tự động lấy thông tin lớp
+          </button>
+      </div>
+
       <CommentGenerator
         customInput={customInput}
         setCustomInput={setCustomInput}
