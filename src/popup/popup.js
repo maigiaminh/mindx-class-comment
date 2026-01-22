@@ -105,8 +105,21 @@ export default function Popup() {
       return;
     }
 
+    const lesson = lessonsData?.[subject]?.[course]?.[session];
+    let lessonContent = "";
+    if (lesson) {
+      lessonContent = Array.isArray(lesson) ? lesson.join("\n") : lesson;
+    }
+
     setStatus("Đang tạo nhận xét...");
-    const prompt = `Hãy viết một đoạn ngắn nhận xét dựa trên nội dung sau: "${customInput}".`;
+    const prompt = `Viết một nhận xét ngắn gọn, chuyên nghiệp, mang tính khích lệ cho học viên.
+    Thông tin buổi học:
+    - Môn: ${subject}
+    - Khóa: ${course}
+    - Buổi: ${session}
+    - Nội dung buổi: ${lessonContent}
+    
+    Nhận xét dựa trên các ý: "${customInput}".`;
     const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
 
     chrome.runtime.sendMessage(
@@ -120,11 +133,12 @@ export default function Popup() {
         if (response?.comment) {
           const comment = response.comment.trim();
           setComment(comment);
-          setStatus("Đã tạo nhận xét!");
+          setStatus("Đã tạo xong! Đang điền và lưu...");
           chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             chrome.scripting.executeScript({
               target: { tabId: tabs[0].id },
               func: (comment) => {
+                // 1. Fill Content
                 const editor = document.querySelector(
                   "div.ql-editor[contenteditable='true']"
                 );
@@ -135,17 +149,35 @@ export default function Popup() {
                     .join("");
                   editor.dispatchEvent(new Event("input", { bubbles: true }));
                 } else {
-                  alert("Không tìm thấy vùng nhập liệu (.ql-editor)");
+                  console.error("Không tìm thấy ô nhập liệu .ql-editor");
+                  return;
+                }
+
+                // 2. Click Save Button
+                // Strategy: Find button with "Save" text inside span
+                const buttons = Array.from(document.querySelectorAll("button"));
+                const saveBtn = buttons.find((btn) => 
+                  btn.innerText.includes("Save") || 
+                  btn.querySelector(".MuiButton-label")?.innerText === "Save"
+                );
+
+                if (saveBtn) {
+                  setTimeout(() => {
+                    saveBtn.click();
+                  }, 500); // Wait a bit for React to process the input
+                } else {
+                  console.error("Không tìm thấy nút Save");
                 }
               },
               args: [comment],
             });
           });
         } else {
-          setStatus("GPT không trả về nội dung nhận xét.");
+          setStatus("Lỗi GPT: " + (response?.error || "Không có phản hồi."));
         }
       }
     );
+
   };
 
   return (

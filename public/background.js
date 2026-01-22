@@ -21,24 +21,31 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
 
         const data = await result.json();
+
+        if (data.error) {
+             console.error("OpenAI Error:", data.error);
+             sendResponse({ comment: null, error: data.error.message });
+             return;
+        }
+
         const message = data?.choices?.[0]?.message?.content?.trim();
 
         if (message) {
           sendResponse({ comment: message });
 
           chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            chrome.tabs.sendMessage(tabs[0].id, {
+            chrome.tabs.sendMessage(tabs[0].id, { 
               action: "insertCommentToEditor",
               comment: message,
             });
           });
         } else {
           console.warn("GPT không trả về nội dung.");
-          sendResponse({ comment: null });
+          sendResponse({ comment: null, error: "No content returned" });
         }
       } catch (error) {
         console.error("GPT API error:", error);
-        sendResponse({ comment: null });
+        sendResponse({ comment: null, error: error.message });
       }
     })();
 
